@@ -22,9 +22,11 @@
 	.cpu cortex-m0
 	.thumb
 
-.global mu
-mu:
-	push {a1, v1, v2, v3, v4, lr}
+.global ast
+ast:
+	push {a1, v1, v2, v3, lr}
+/* BEGIN mu */
+	push {a3}
 	adr v1, mu_const
 	ldm v1, {v1, v2, v3, v4}
 	ldm a2, {a1, a2, a3, a4}
@@ -67,14 +69,12 @@ mu:
 	eors v3, v3, a1
 	eors v4, v4, a1
 
-	pop {a1}
-	stm a1!, {v3, v4}
-	stm a1!, {v1, v2}
-	pop {v1, v2, v3, v4, pc}
+	pop {r1}
+	push {v1, v2}
+	push {v3, v4}
+/* END MU */
 
-.global ny
-ny:
-/*	push {a1, v1, v2, v3, v4, lr} */
+/* START ny */
 	adr v1, ny_const
 	ldm v1, {v1, v2, v3, v4}
 	ldm a2, {a1, a2, a3, a4}
@@ -116,29 +116,8 @@ ny:
 	eors v2, v2, a1
 	eors v3, v3, a1
 	eors v4, v4, a1
-/*
-	pop {a1}
-	stm a1!, {v1, v2, v3, v4}
-	pop {v1, v2, v3, v4, pc}
-*/
-	bx lr
+/* END ny */
 
-	.align 4
-mu_const:
-	.word 0xF0E8E4E2, 0xE1D8D4D2, 0xD1CCCAC9, 0xC6C5C3B8
-ny_const:
-	.word 0xB4B2B1AC, 0xAAA9A6A5, 0xA39C9A99, 0x9695938E
-
-.global ast
-ast:
-	push {a1, v1, v2, v3, v4, lr}
-	sub SP, SP, #(1 * 4 * 4)
-	mov v2, a3
-	mov r0, SP
-	bl mu
-/*	add r0, SP, #16 */
-	mov r1, v2
-	bl ny
 	pop {r0, r1, r2, r3} /*, v1, v2, v3, v4} */
 	adds r0, r0, v1
 	adds r1, r1, v2
@@ -147,7 +126,7 @@ ast:
 	pop {v1}
 	stm v1!, {r1, r2, r3}
 	stm v1!, {r0}
-	pop {v1, v2, v3, v4, pc}
+	pop {v1, v2, v3, pc}
 
 /*
 static void e1(
@@ -168,9 +147,18 @@ static void e1(
     } while (--n);
 }
 */
+
+	.align 4
+mu_const:
+	.word 0xF0E8E4E2, 0xE1D8D4D2, 0xD1CCCAC9, 0xC6C5C3B8
+ny_const:
+	.word 0xB4B2B1AC, 0xAAA9A6A5, 0xA39C9A99, 0x9695938E
+
+
+
 .global e1
 e1:
-	push {v1, v2, v3, v4, lr}
+	push {v1, v2, v3, lr}
 	mov v1, a1
 	mov v3, a3
 	bl ast
@@ -184,7 +172,7 @@ e1:
 	bl ast
 	subs v2, #1
 	bne 1b
-	pop {v1, v2, v3, v4, pc}
+	pop {v1, v2, v3, pc}
 
 /*
 static void e2(
@@ -205,7 +193,7 @@ static void e2(
 */
 .global e2
 e2:
-	push {v1, v2, v3, v4, lr}
+	push {v1, v2, v3, lr}
 	adds a1, a1, #(4 * 4 * 3)
 	adds a3, a3, #(4 * 4 * 3)
 	mov v1, a1
@@ -223,7 +211,7 @@ e2:
 	bl ast
 	subs v2, #1
 	bne 1b
-	pop {v1, v2, v3, v4, pc}
+	pop {v1, v2, v3, pc}
 
 /*
 static void pi(
@@ -242,7 +230,7 @@ static void pi(
 */
 .global pi
 pi:
-	push {v1, v2, v3, lr}
+	push {v1, v2, v3, v4, lr}
 	sub SP, SP, #(4 * 4 * 4)
 	adr v2, pi_const
 	mov v1, a1
@@ -261,7 +249,7 @@ pi:
 	subs v3, #1
 	bne 1b
 	add SP, SP, #(4 * 4 * 4)
-	pop {v1, v2, v3, pc}
+	pop {v1, v2, v3, v4, pc}
 
 	.align 4
 pi_const:
